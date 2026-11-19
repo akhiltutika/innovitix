@@ -178,3 +178,53 @@ body{background:var(--temperature-paper,var(--paper));transition:background-colo
 @media (pointer: coarse), (prefers-reduced-motion: reduce) {
   .cursor-guide { display: none; }
 }
+
+/* Touch motion mirrors the cursor treatment without replacing normal scroll gestures. */
+@media (pointer: coarse) {
+  .hero-content,
+  .robotics-visual,
+  .audience-section,
+  .kit-card,
+  .solution-card,
+  .control-map { touch-action: pan-y; }
+  .hero-shade {
+    background: linear-gradient(180deg, rgba(241,239,234,.86) 0%, rgba(241,239,234,.94) 62%, #efede8 100%);
+  }
+  .dark-theme .hero-shade {
+    background: linear-gradient(180deg, rgba(20,19,17,.85) 0%, rgba(20,19,17,.94) 62%, #171614 100%);
+  }
+  .hero-particle-field { opacity: .44; }
+  .hero:after {
+    display: block;
+    background: radial-gradient(360px circle at var(--pointer-x,50%) var(--pointer-y,45%), color-mix(in srgb, var(--temperature-accent,#e59156) 17%, transparent), transparent 76%);
+  }
+  .cursor-guide { display: block; width: 30px; height: 30px; mix-blend-mode: multiply; }
+  .cursor-guide.touch-guide { transition: opacity .2s ease, width .22s ease, height .22s ease, background .22s ease, border-color .22s ease; }
+  .kit-card.touch-active {
+    transform: perspective(900px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) translateY(-3px) !important;
+    box-shadow: 0 18px 45px rgba(42,34,26,.11);
+  }
+  .solution-card.touch-active {
+    transform: perspective(1000px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) translateY(-2px) !important;
+    box-shadow: 0 16px 38px rgba(38,32,26,.09);
+  }
+  .kit-card.touch-active .kit-illustration { transform: translateZ(14px) translate(var(--object-x,0px),var(--object-y,0px)); }
+  .solution-card.touch-active .solution-photo:after,
+  .kit-card.touch-active .kit-image:after { display: block; opacity: 1; }
+  .robotics-visual.touch-active img {
+    transform: scale(1.07) translate3d(var(--parallax-x,0px),var(--parallax-y,0px),0) !important;
+    transition: transform .16s ease-out;
+  }
+  .audience-section.touch-active .audience-image {
+    transform: scale(1.04) translate3d(var(--audience-x,0px),var(--audience-y,0px),0);
+  }
+  .room-widget.touch-active {
+    background: radial-gradient(300px circle at var(--spot-x,50%) var(--spot-y,50%), color-mix(in srgb, var(--temperature-accent,#d47e48) 24%, transparent), transparent 76%), rgba(255,253,249,.94);
+  }
+  .dark-theme .room-widget.touch-active {
+    background: radial-gradient(300px circle at var(--spot-x,50%) var(--spot-y,50%), color-mix(in srgb, var(--temperature-accent,#d47e48) 24%, transparent), transparent 76%), rgba(39,36,32,.96);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor-guide { display: none !important; }
+}

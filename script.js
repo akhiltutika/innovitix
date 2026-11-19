@@ -549,6 +549,125 @@ if (hasHoverPointer && !reducedMotion) {
   });
 }
 
+// Touchscreens get the same depth and light cues through a short touch-and-drag gesture.
+if (!hasHoverPointer && !reducedMotion) {
+  const touchGuide = document.createElement('span');
+  touchGuide.className = 'cursor-guide touch-guide';
+  touchGuide.setAttribute('aria-hidden', 'true');
+  document.body.append(touchGuide);
+  const touchSelector = '.control-map,.room-widget,.kit-card,.solution-card,.robotics-visual,.audience-section,.hero';
+  let activeTouchId = null;
+  let activeTouchSurface = null;
+  let touchResetTimer = 0;
+
+  const resetTouchSurface = () => {
+    if (!activeTouchSurface) return;
+    activeTouchSurface.classList.remove('touch-active');
+    const hero = activeTouchSurface.closest('.hero') || (activeTouchSurface.matches('.hero') ? activeTouchSurface : null);
+    if (hero) {
+      hero.classList.remove('pointer-active');
+      $('.hero-image')?.style.setProperty('--hero-x', '0px');
+      $('.hero-image')?.style.setProperty('--hero-y', '0px');
+    }
+    if (activeTouchSurface.matches('.robotics-visual')) {
+      activeTouchSurface.style.setProperty('--parallax-x', '0px');
+      activeTouchSurface.style.setProperty('--parallax-y', '0px');
+    }
+    if (activeTouchSurface.matches('.audience-section')) {
+      activeTouchSurface.style.setProperty('--audience-x', '0px');
+      activeTouchSurface.style.setProperty('--audience-y', '0px');
+    }
+    if (activeTouchSurface.matches('.kit-card,.solution-card')) {
+      activeTouchSurface.style.setProperty('--tilt-x', '0deg');
+      activeTouchSurface.style.setProperty('--tilt-y', '0deg');
+      activeTouchSurface.style.setProperty('--object-x', '0px');
+      activeTouchSurface.style.setProperty('--object-y', '0px');
+    }
+    activeTouchSurface = null;
+  };
+
+  const updateTouchMotion = (event) => {
+    if (!(event.target instanceof Element)) return;
+    const surface = event.target.closest(touchSelector);
+    if (!surface) return;
+    if (touchResetTimer) window.clearTimeout(touchResetTimer);
+    if (activeTouchSurface && activeTouchSurface !== surface) resetTouchSurface();
+    activeTouchSurface = surface;
+    surface.classList.add('touch-active');
+    const bounds = surface.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const x = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    const y = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
+    const pointX = `${(x * 100).toFixed(1)}%`;
+    const pointY = `${(y * 100).toFixed(1)}%`;
+    touchGuide.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0) translate(-50%, -50%)`;
+    touchGuide.classList.add('is-visible');
+    touchGuide.classList.toggle('is-interactive', Boolean(event.target.closest('a,button,[role="button"]')));
+    surface.style.setProperty('--spot-x', pointX);
+    surface.style.setProperty('--spot-y', pointY);
+    surface.style.setProperty('--cursor-x', pointX);
+    surface.style.setProperty('--cursor-y', pointY);
+
+    if (surface.matches('.hero')) {
+      const image = $('.hero-image');
+      surface.classList.add('pointer-active');
+      surface.style.setProperty('--pointer-x', pointX);
+      surface.style.setProperty('--pointer-y', pointY);
+      image?.style.setProperty('--hero-x', `${((0.5 - x) * 18).toFixed(1)}px`);
+      image?.style.setProperty('--hero-y', `${((0.5 - y) * 12).toFixed(1)}px`);
+      orbTarget = { x, y };
+      queueHeroOrb();
+    } else if (surface.matches('.room-widget')) {
+      surface.style.setProperty('--spot-x', pointX);
+      surface.style.setProperty('--spot-y', pointY);
+    } else if (surface.matches('.kit-card,.solution-card')) {
+      const tilt = surface.matches('.kit-card') ? 3.5 : 2;
+      surface.style.setProperty('--tilt-x', `${((0.5 - y) * tilt * 2).toFixed(2)}deg`);
+      surface.style.setProperty('--tilt-y', `${((x - 0.5) * tilt * 2).toFixed(2)}deg`);
+      surface.style.setProperty('--object-x', `${((x - 0.5) * 9).toFixed(1)}px`);
+      surface.style.setProperty('--object-y', `${((y - 0.5) * 7).toFixed(1)}px`);
+    } else if (surface.matches('.robotics-visual')) {
+      surface.style.setProperty('--parallax-x', `${((0.5 - x) * 18).toFixed(1)}px`);
+      surface.style.setProperty('--parallax-y', `${((0.5 - y) * 12).toFixed(1)}px`);
+    } else if (surface.matches('.audience-section')) {
+      surface.style.setProperty('--audience-x', `${((0.5 - x) * 14).toFixed(1)}px`);
+      surface.style.setProperty('--audience-y', `${((0.5 - y) * 10).toFixed(1)}px`);
+    } else if (surface.matches('.control-map')) {
+      const canvas = surface.closest('.motion-canvas');
+      canvas?.style.setProperty('--cursor-x', pointX);
+      canvas?.style.setProperty('--cursor-y', pointY);
+      $('#pointer-x').textContent = x.toFixed(2);
+      $('#pointer-y').textContent = y.toFixed(2);
+      const nearest = [...document.querySelectorAll('.map-node')].reduce((best, node) => {
+        const rect = node.getBoundingClientRect();
+        const distance = Math.hypot((rect.left + rect.width / 2 - event.clientX) / bounds.width,
+          (rect.top + rect.height / 2 - event.clientY) / bounds.height);
+        return distance < best.distance ? { node, distance } : best;
+      }, { node: null, distance: Infinity });
+      if (nearest.node) selectMotionStep(nearest.node.dataset.step);
+    }
+  };
+
+  document.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') return;
+    activeTouchId = event.pointerId;
+    updateTouchMotion(event);
+  }, { passive: true });
+  document.addEventListener('pointermove', (event) => {
+    if (event.pointerType === 'touch' && event.pointerId === activeTouchId) updateTouchMotion(event);
+  }, { passive: true });
+  const finishTouchMotion = (event) => {
+    if (event.pointerId !== activeTouchId) return;
+    activeTouchId = null;
+    touchResetTimer = window.setTimeout(() => {
+      resetTouchSurface();
+      touchGuide.classList.remove('is-visible', 'is-interactive');
+    }, 520);
+  };
+  document.addEventListener('pointerup', finishTouchMotion, { passive: true });
+  document.addEventListener('pointercancel', finishTouchMotion, { passive: true });
+}
+
 $('#contact-form').addEventListener('submit', (event) => {
   event.preventDefault();
   const form = event.currentTarget;
