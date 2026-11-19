@@ -118,3 +118,63 @@ body{background:var(--temperature-paper,var(--paper));transition:background-colo
   .header-actions { gap: 6px; }
   .theme-toggle, .menu-toggle { width: 36px; height: 36px; }
 }
+
+/* Cursor-led motion system for precise pointers; native pointer remains visible. */
+.cursor-guide {
+  position: fixed;
+  z-index: 55;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--temperature-accent-dark, #995b38) 54%, transparent);
+  border-radius: 50%;
+  color: var(--temperature-accent-dark, #995b38);
+  background: color-mix(in srgb, var(--temperature-accent, #e59156) 3%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+  mix-blend-mode: multiply;
+  transition: opacity .2s ease, width .25s cubic-bezier(.2,.8,.2,1), height .25s cubic-bezier(.2,.8,.2,1), background .25s ease, border-color .25s ease;
+}
+.cursor-guide.is-visible { opacity: .9; }
+.cursor-guide::before {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--temperature-accent, #e59156) 45%, transparent);
+  transform: translate(-50%, -50%);
+  transition: width .25s ease, height .25s ease;
+}
+.cursor-guide::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 1px solid currentColor;
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  opacity: .66;
+}
+.cursor-guide.is-interactive {
+  width: 50px;
+  height: 50px;
+  background: color-mix(in srgb, var(--temperature-accent, #e59156) 8%, transparent);
+  border-color: color-mix(in srgb, var(--temperature-accent-dark, #995b38) 74%, transparent);
+}
+.cursor-guide.is-interactive::before { width: 6px; height: 6px; }
+.dark-theme .cursor-guide { mix-blend-mode: screen; color: var(--temperature-accent, #e59156); }
+.room-widget {
+  background: radial-gradient(300px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--temperature-accent, #d47e48) 19%, transparent), transparent 76%), rgba(255,253,249,.92);
+}
+.dark-theme .room-widget {
+  background: radial-gradient(300px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--temperature-accent, #d47e48) 20%, transparent), transparent 76%), rgba(39,36,32,.94);
+}
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .cursor-guide { display: none; }
+}

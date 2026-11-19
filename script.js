@@ -414,6 +414,41 @@ if (controlMap && hasHoverPointer && !reducedMotion) {
 }
 
 if (hasHoverPointer && !reducedMotion) {
+  // A quiet, robotics-inspired cursor guide adds a consistent motion cue across the page.
+  const cursorGuide = document.createElement('span');
+  cursorGuide.className = 'cursor-guide';
+  cursorGuide.setAttribute('aria-hidden', 'true');
+  document.body.append(cursorGuide);
+  const cursorTarget = { x: -48, y: -48 };
+  const cursorPosition = { x: -48, y: -48 };
+  let cursorFrame = 0;
+  let cursorAngle = 0;
+  const animateCursor = () => {
+    const dx = cursorTarget.x - cursorPosition.x;
+    const dy = cursorTarget.y - cursorPosition.y;
+    cursorPosition.x += dx * 0.24;
+    cursorPosition.y += dy * 0.24;
+    if (Math.hypot(dx, dy) > 0.5) cursorAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+    cursorGuide.style.transform = `translate3d(${cursorPosition.x}px, ${cursorPosition.y}px, 0) translate(-50%, -50%) rotate(${cursorAngle.toFixed(1)}deg)`;
+    if (Math.hypot(dx, dy) > 0.35) cursorFrame = requestAnimationFrame(animateCursor);
+    else cursorFrame = 0;
+  };
+  window.addEventListener('pointermove', (event) => {
+    if (event.pointerType === 'touch') return;
+    cursorTarget.x = event.clientX;
+    cursorTarget.y = event.clientY;
+    cursorGuide.classList.add('is-visible');
+    if (!cursorFrame) cursorFrame = requestAnimationFrame(animateCursor);
+  }, { passive: true });
+  document.addEventListener('pointerover', (event) => {
+    if (!(event.target instanceof Element)) return;
+    cursorGuide.classList.toggle('is-interactive', Boolean(event.target.closest('a,button,input,textarea,select,[role="button"],[tabindex="0"]')));
+  });
+  document.addEventListener('pointerout', (event) => {
+    if (event.relatedTarget instanceof Element) return;
+    cursorGuide.classList.remove('is-visible', 'is-interactive');
+  });
+
   const bindTilt = (element, amount = 3) => {
     element.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return;
@@ -438,8 +473,8 @@ if (hasHoverPointer && !reducedMotion) {
       element.style.setProperty('--spot-y', '50%');
     });
   };
-  document.querySelectorAll('.kit-card').forEach((card) => bindTilt(card, 3));
-  document.querySelectorAll('.solution-card').forEach((card) => bindTilt(card, 1.5));
+  document.querySelectorAll('.kit-card').forEach((card) => bindTilt(card, 4.2));
+  document.querySelectorAll('.solution-card').forEach((card) => bindTilt(card, 2.3));
   const roomWidget = $('.room-widget');
   roomWidget.addEventListener('pointermove', (event) => {
     if (event.pointerType === 'touch') return;
@@ -455,8 +490,8 @@ if (hasHoverPointer && !reducedMotion) {
     button.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') return;
       const rect = button.getBoundingClientRect();
-      button.style.setProperty('--mag-x', `${((event.clientX - rect.left) / rect.width - 0.5) * 6}px`);
-      button.style.setProperty('--mag-y', `${((event.clientY - rect.top) / rect.height - 0.5) * 5}px`);
+      button.style.setProperty('--mag-x', `${((event.clientX - rect.left) / rect.width - 0.5) * 12}px`);
+      button.style.setProperty('--mag-y', `${((event.clientY - rect.top) / rect.height - 0.5) * 9}px`);
     });
     button.addEventListener('pointerleave', () => {
       button.style.setProperty('--mag-x', '0px');
@@ -473,8 +508,8 @@ if (hasHoverPointer && !reducedMotion) {
     hero.classList.add('pointer-active');
     hero.style.setProperty('--pointer-x', `${(x * 100).toFixed(1)}%`);
     hero.style.setProperty('--pointer-y', `${(y * 100).toFixed(1)}%`);
-    heroImage.style.setProperty('--hero-x', `${((0.5 - x) * 8).toFixed(1)}px`);
-    heroImage.style.setProperty('--hero-y', `${((0.5 - y) * 6).toFixed(1)}px`);
+    heroImage.style.setProperty('--hero-x', `${((0.5 - x) * 20).toFixed(1)}px`);
+    heroImage.style.setProperty('--hero-y', `${((0.5 - y) * 14).toFixed(1)}px`);
     orbTarget = { x, y };
     queueHeroOrb();
   });
@@ -490,8 +525,8 @@ if (hasHoverPointer && !reducedMotion) {
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
     roboticsImage.classList.add('cursor-active');
-    roboticsImage.style.setProperty('--parallax-x', `${((0.5 - x) * 12).toFixed(1)}px`);
-    roboticsImage.style.setProperty('--parallax-y', `${((0.5 - y) * 10).toFixed(1)}px`);
+    roboticsImage.style.setProperty('--parallax-x', `${((0.5 - x) * 20).toFixed(1)}px`);
+    roboticsImage.style.setProperty('--parallax-y', `${((0.5 - y) * 14).toFixed(1)}px`);
   });
   roboticsImage.addEventListener('pointerleave', () => {
     roboticsImage.classList.remove('cursor-active');
@@ -504,8 +539,8 @@ if (hasHoverPointer && !reducedMotion) {
     const rect = audience.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
-    audience.style.setProperty('--audience-x', `${((0.5 - x) * 10).toFixed(1)}px`);
-    audience.style.setProperty('--audience-y', `${((0.5 - y) * 8).toFixed(1)}px`);
+    audience.style.setProperty('--audience-x', `${((0.5 - x) * 16).toFixed(1)}px`);
+    audience.style.setProperty('--audience-y', `${((0.5 - y) * 12).toFixed(1)}px`);
   });
   audience.addEventListener('pointerleave', () => {
     audience.style.setProperty('--audience-x', '0px');
