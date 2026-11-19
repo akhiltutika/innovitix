@@ -282,8 +282,9 @@ if (!hasHoverPointer) {
 
 const heroCanvas = $('.hero-particle-field');
 const heroContext = heroCanvas?.getContext('2d', { alpha: true });
-const particlePoints = Array.from({ length: 560 }, (_, index, all) => {
-  const y = 1 - 2 * (index + 0.5) / all.length;
+const particleCount = 560;
+const particlePoints = Array.from({ length: particleCount }, (_, index) => {
+  const y = 1 - 2 * (index + 0.5) / particleCount;
   const radius = Math.sqrt(1 - y * y);
   const angle = index * Math.PI * (3 - Math.sqrt(5));
   return { x: Math.cos(angle) * radius, y, z: Math.sin(angle) * radius };
