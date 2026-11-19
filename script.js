@@ -359,6 +359,29 @@ resizeHeroOrb();
 window.addEventListener('resize', resizeHeroOrb, { passive: true });
 window.addEventListener('innovotix:temperature', drawHeroOrb);
 
+// Let visitors explore the robotics map with a tap as well as a cursor.
+if (controlMap && !reducedMotion) {
+  controlMap.addEventListener('pointerdown', (event) => {
+    const bounds = controlMap.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const x = (event.clientX - bounds.left) / bounds.width;
+    const y = (event.clientY - bounds.top) / bounds.height;
+    controlMap.style.setProperty('--cursor-x', `${(x * 100).toFixed(1)}%`);
+    controlMap.style.setProperty('--cursor-y', `${(y * 100).toFixed(1)}%`);
+    controlMap.closest('.motion-canvas')?.style.setProperty('--cursor-x', `${(x * 100).toFixed(1)}%`);
+    controlMap.closest('.motion-canvas')?.style.setProperty('--cursor-y', `${(y * 100).toFixed(1)}%`);
+    $('#pointer-x').textContent = x.toFixed(2);
+    $('#pointer-y').textContent = y.toFixed(2);
+    const nearest = [...document.querySelectorAll('.map-node')].reduce((best, node) => {
+      const rect = node.getBoundingClientRect();
+      const distance = Math.hypot((rect.left + rect.width / 2 - event.clientX) / bounds.width,
+        (rect.top + rect.height / 2 - event.clientY) / bounds.height);
+      return distance < best.distance ? { node, distance } : best;
+    }, { node: null, distance: Infinity });
+    if (nearest.node) selectMotionStep(nearest.node.dataset.step);
+  });
+}
+
 if (controlMap && hasHoverPointer && !reducedMotion) {
   controlMap.addEventListener('pointermove', (event) => {
     if (event.pointerType === 'touch') return;
